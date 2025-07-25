@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "rpg_app.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "rpg_app.py" }
+  ]
+}

@@ -3,6 +3,7 @@
 import os
 import json
 import gradio as gr
+from fastapi import FastAPI
 from together import Together
 from helper import get_together_api_key#, load_world, save_world
 
@@ -226,7 +227,7 @@ def main_loop(message, history):
     return run_action(message, history, game_state)
 
 # Launch Gradio App
-gr.ChatInterface(
+demo = gr.ChatInterface(
     fn=main_loop,
     chatbot=gr.Chatbot(height=300, placeholder="Say something to begin..."),
     textbox=gr.Textbox(placeholder="Type your action here...", container=False),
@@ -236,4 +237,7 @@ gr.ChatInterface(
     retry_btn="Retry",
     undo_btn="Undo",
     clear_btn="Reset"
-).launch(share=True)
+)
+
+app = FastAPI()
+app = gr.mount_gradio_app(app, demo, path="/")
