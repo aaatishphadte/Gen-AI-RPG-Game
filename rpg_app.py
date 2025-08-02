@@ -226,14 +226,74 @@ def main_loop(message, history):
     return run_action(message, history, game_state)
 
 # Launch Gradio App
-gr.ChatInterface(
-    fn=main_loop,
-    chatbot=gr.Chatbot(height=300, placeholder="Say something to begin..."),
-    textbox=gr.Textbox(placeholder="Type your action here...", container=False),
-    title="🧙‍♂️ AI RPG World Generator",
-    theme="soft",
-    examples=["start game", "Look around", "Talk to someone"],
-    retry_btn="Retry",
-    undo_btn="Undo",
-    clear_btn="Reset"
-).launch(share=True)
+# gr.ChatInterface(
+#     fn=main_loop,
+#     chatbot=gr.Chatbot(height=300, placeholder="Say something to begin..."),
+#     textbox=gr.Textbox(placeholder="Type your action here...", container=False),
+#     title="🧙‍♂️ AI RPG World Generator",
+#     theme="soft",
+#     examples=["start game", "Look around", "Talk to someone"],
+#     retry_btn="Retry",
+#     undo_btn="Undo",
+#     clear_btn="Reset"
+# ).launch(share=True)
+
+with gr.Blocks(theme="soft") as demo:
+    # 🔹 Intro box
+    intro_box = gr.Group(visible=True)
+    with intro_box:
+        gr.Markdown("### 🧙‍♂️ Welcome to Kyropeia\n\n" + game_state["start"])
+        dismiss_btn = gr.Button("❌ Dismiss Intro", variant="stop")
+
+    # 🔹 Chat Interface logic
+    chatbot = gr.Chatbot(height=300, placeholder="Say something to begin...")
+    textbox = gr.Textbox(placeholder="Type your action here...", container=False)
+    title="🧙‍♂️ AI RPG World Generator"
+
+    # 🔹 Submit button
+    submit_btn = gr.Button("Submit")
+
+    # 🔹 Retry / Undo / Reset
+    with gr.Row():
+        retry_btn = gr.Button("🔁 Retry")
+        undo_btn = gr.Button("↩️ Undo")
+        clear_btn = gr.Button("🔄 Reset")
+
+    # 🔹 Examples
+    gr.Examples(
+        examples=["start game", "Look around", "Talk to someone", "Continue exploring"],
+        inputs=[textbox]
+    )
+
+    # 🔹 Chat state
+    state = gr.State([])
+
+    # 🔹 Button & Textbox logic
+    def user_submit(message, chat_history):
+        response = main_loop(message, chat_history)
+        chat_history.append((message, response))
+        return "", chat_history
+
+    def retry_last(chat_history):
+        if chat_history:
+            last_input = chat_history[-1][0]
+            return last_input, chat_history[:-1]
+        return "", chat_history
+
+    def undo_last(chat_history):
+        return chat_history[:-1]
+
+    def clear_all():
+        return [], []
+
+    # 🔹 Bind interactions
+    textbox.submit(user_submit, [textbox, state], [textbox, chatbot])
+    submit_btn.click(user_submit, [textbox, state], [textbox, chatbot])
+    retry_btn.click(retry_last, state, [textbox, state])
+    undo_btn.click(undo_last, state, chatbot)
+    clear_btn.click(clear_all, None, [chatbot, state])
+    dismiss_btn.click(lambda: gr.update(visible=False), None, intro_box)
+
+# 🔹 Launch
+demo.launch(share=True)
+
